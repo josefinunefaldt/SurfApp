@@ -1,0 +1,96 @@
+﻿@using MudBlazor
+@inject HttpClient httpClient
+
+@code {
+  
+    @inject NavigationManager NavigationManager
+    public SwellAndTideData swellAndTideData;
+    private string apiKey = "7ef01436-9c5a-11ee-950b-0242ac130002-7ef014fe-9c5a-11ee-950b-0242ac130002";
+    private string apiKey2 = "b08b5bba-9b68-11ee-84d9-0242ac130002-b08b5c3c-9b68-11ee-84d9-0242ac130002";
+    private string apiKey7 = "ee7c013a-95fb-11ee-8b92-0242ac130002-ee7c01b2-95fb-11ee-8b92-0242ac130002";
+    private string apiKey1 = " 21a258e0-9c58-11ee-84d9-0242ac130002-21a25976-9c58-11ee-84d9-0242ac130002";
+    private string apiKey9 = " 7ef01436-9c5a-11ee-950b-0242ac130002-7ef014fe-9c5a-11ee-950b-0242ac130002";
+    private string apiUrl = "https://api.stormglass.io/v2";
+    public SwellAndTideData FetchedData { get; set; }
+
+    public async Task FetchData(string lat, string lng)
+    {
+      
+        var parameters = new List<string> { "swellHeight", "swellPeriod", "cloudCover", "airTemperature" };
+        var start = DateTime.UtcNow.Date.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var end = DateTime.UtcNow.Date.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+        var swellRequestUrl = $"{apiUrl}/weather/point?lat={lat}&lng={lng}&params={string.Join(',', parameters)}&start={start}&end={end}";
+        var swellRequest = new HttpRequestMessage(HttpMethod.Get, swellRequestUrl);
+        swellRequest.Headers.Add("Authorization", apiKey);
+
+        var swellResponse = await httpClient.SendAsync(swellRequest);
+
+        SwellData swellData = null;
+        if (swellResponse.IsSuccessStatusCode)
+        {
+            var json = await swellResponse.Content.ReadAsStringAsync();
+            swellData = JsonSerializer.Deserialize<SwellData>(json);
+            swellData.lat = lat;
+            swellData.lng = lng;
+        }
+
+        var tideRequestUrl = $"{apiUrl}/tide/extremes/point?lat={lat}&lng={lng}&start={start}&end={end}";
+        var tideRequest = new HttpRequestMessage(HttpMethod.Get, tideRequestUrl);
+        tideRequest.Headers.Add("Authorization", apiKey);
+
+        var tideResponse = await httpClient.SendAsync(tideRequest);
+
+        TideData tideData = null;
+        if (tideResponse.IsSuccessStatusCode)
+        {
+            var json = await tideResponse.Content.ReadAsStringAsync();
+            tideData = JsonSerializer.Deserialize<TideData>(json);
+        }
+
+        swellAndTideData = new SwellAndTideData { SwellData = swellData, TideData = tideData };
+        FetchedData = swellAndTideData; // Store the fetched data in the public property
+       
+
+
+    }
+
+    public class SwellDetail
+    {
+        public double sg { get; set; }
+    }
+
+    public class HourData
+    {
+        public SwellDetail swellHeight { get; set; }
+        public SwellDetail swellPeriod { get; set; }
+        public SwellDetail cloudCover { get; set; }
+        public SwellDetail airTemperature { get; set; }
+        public DateTime time { get; set; }
+    }
+
+    public class SwellData
+    {
+        public List<HourData> hours { get; set; }
+        public string lat { get; set; }
+        public string lng { get; set; }
+    }
+
+    public class TideHour
+    {
+        public DateTime time { get; set; }
+        public double height { get; set; }
+        public string type { get; set; }
+    }
+
+    public class TideData
+    {
+        public List<TideHour> data { get; set; }
+    }
+
+    public class SwellAndTideData
+    {
+        public SwellData SwellData { get; set; }
+        public TideData TideData { get; set; }
+    }
+}

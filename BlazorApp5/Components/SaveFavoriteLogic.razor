@@ -1,0 +1,58 @@
+﻿<!-- SaveFavoriteLogic.razor -->
+@using System.Globalization
+@using BlazorApp5.Data.Entities
+@using BlazorApp5.Data
+@using MudBlazor
+@using static SwellAndTideComponent;
+
+@inject ApplicationDbContext dbContext
+
+@inject NavigationManager navigationManager;
+
+@inject HttpClient HttpClient
+@inject ApplicationDbContext dbContext
+@code {
+    public string validationError;
+    public async Task SaveFavoriteSpot(SwellAndTideData swellAndTideData, string userName, string spotName, string description, string placeName)
+    {
+        var newSpot = new Favourites
+            {
+                Fav_username = userName,
+                Fav_user_spotname = spotName,
+                Fav_latitude = swellAndTideData.SwellData.lat,
+                Fav_longitude = swellAndTideData.SwellData.lng,
+                Fav_description = description,
+                Fav_location = placeName,
+                Fav_created_at = DateTime.Now
+            };
+
+        var validationContext = new ValidationContext(newSpot, null, null);
+        var validationResults = new List<ValidationResult>();
+
+        bool isValid = Validator.TryValidateObject(newSpot, validationContext, validationResults, true);
+
+        if (!isValid)
+        {
+        
+            validationError = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
+            return;
+        }
+
+        if (isValid)
+        {
+            dbContext.FavouriteSpot.Add(newSpot);
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync();
+         
+
+        }
+        
+        catch (Exception ex)
+        {
+            
+        }
+    }
+}

@@ -1,0 +1,248 @@
+﻿@page "/Demo"
+@rendermode InteractiveServer
+@using System.Globalization
+@using BlazorApp5.Data.Entities
+@using BlazorApp5.Data
+@using MudBlazor
+
+
+@inject ApplicationDbContext dbContext
+
+@inject NavigationManager navigationManager;
+
+@inject HttpClient HttpClient
+
+<MudContainer>
+    <CoordinateSetterComponent OnCoordinatesSet="@SetCoordinatesHandler" />
+</MudContainer>
+<SaveFavoriteLogic @ref="favoriteLogicRef" />
+<DeleteComponent @ref="deleteRef" />
+<SwellAndTideComponent @ref="swellAndTideComponent" />
+<LocationComponent @ref="locationRef" /> 
+<MudContainer>
+   
+ <br />
+ <br />
+    <MudTextField Label="latitude" @bind-Value="@latitude" />
+    <MudTextField Label="longitude" @bind-Value="@longitude" />
+    <MudButton ButtonType="ButtonType.Button" Style="border:solid" OnClick="@(()=> GetSwellAndTideDate(latitude,longitude))">Get swell and tide data with coordinates</MudButton>
+    <br />
+    <MudTextField Label="Enter location" @bind-Value="@placeName" />
+    <MudButton ButtonType="ButtonType.Button" Style="border:solid" OnClick="@(() =>GetCoordinates(placeName))">Get swell and tide data with location</MudButton><br /><br />
+ 
+    @if (showDeleteFields)
+    {<br />
+        <MudField>Enter info about the spot to delete</MudField>
+        <MudTextField Label="username" @bind-Value="@userName" />
+        <MudTextField Label="Spot name" @bind-Value="@spotName" />
+
+        <MudButton Color="Color.Error" Style="border:solid" OnClick="@(() => deleteRef.DeleteFavorite(userName,spotName))">
+         delete
+        </MudButton>
+
+    }
+
+    @if (!showDeleteFields)
+    {
+        <MudButton Color="Color.Error" Style="border:solid" OnClick="@ShowDeleteFields">Delete</MudButton>
+    }
+  
+    <MudButton Color="Color.Success" Style="border:solid" OnClick="@(()=> DisplayFavourites())">Show favourites</MudButton>
+    @if (spotsList != null)
+    {<br />
+        <br />
+        <br />
+        @foreach (var spot in spotsList)
+        {
+            <MudContainer>
+                <MudGrid Justify="Justify.Center" Class="mt-4">
+                    <MudItem xs="12" Class="text-center">
+                        <h4 class="mud-typography-h4">@spot.Fav_user_spotname</h4>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+
+            <MudButton OnClick="@(()=> GetSwellAndTideDate(spot.Fav_latitude,spot.Fav_longitude))">Get favourite data</MudButton>
+        
+        }
+     
+    }
+    @if (swellAndTideComponent != null && swellAndTideComponent.FetchedData != null
+    && swellAndTideComponent.FetchedData.SwellData != null
+    && swellAndTideComponent.FetchedData.TideData != null)
+    {
+       
+        <MudContainer>
+                <MudGrid Justify="Justify.Center" Class="mt-4">
+                    <MudItem xs="12" Class="text-center">
+                        <h1 class="mud-typography-h1">@placeName</h1>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        <MudGrid>
+            <MudItem xs="6">
+                <MudPaper Elevation="3" Class="p-2">
+                
+
+                    @foreach (var hour in swellAndTideComponent.FetchedData.SwellData.hours)
+                    {
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <p class="mb-1"><strong>Time:</strong> @hour.time</p>
+                               
+                                <p class="mb-1"><strong>Swell Height:</strong> @hour.swellHeight.sg</p>
+                                <p class="mb-1"><strong>Swell Period:</strong> @hour.swellPeriod.sg</p>
+                                <p class="mb-1"><strong>Cloud cover:</strong> @hour.cloudCover.sg %</p>
+                                <p class="mb-1"><strong> Air Temperature:</strong> @hour.airTemperature.sg</p>
+
+                            </div>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudPaper Elevation="3" Class="p-2">
+                    <h4>Tide Data</h4>
+                    @foreach (var tideHour in swellAndTideComponent.FetchedData.TideData.data)
+                    {
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="text-end">
+                                <p class="mb-1"><strong>Time:</strong> @tideHour.time</p>
+                                <p class="mb-1"><strong>Tide Height:</strong> @tideHour.height</p>
+                                <p class="mb-1"><strong>Tide Type:</strong> @tideHour.type</p>
+          
+                            </div>
+                        </div>
+        
+                    }
+                    <MudContainer>
+                        <MudGrid Justify="Justify.Center" Class="mt-4">
+                            <MudItem xs="12" Class="text-center">
+                                <h4 class="mud-typography-h4">Save favourite spot</h4>
+                            </MudItem>
+                        </MudGrid>
+                    </MudContainer>
+                   
+                    <MudTextField Label="username" @bind-Value="@userName" />
+                    <MudTextField Label="name your spot" @bind-Value="@spotName" />
+
+                    <MudTextField Label="describe the spot" @bind-Value="@description" />
+                    <MudTextField  @bind-Value="@placeName" class="visually-hidden"/>
+
+                       @if (!string.IsNullOrEmpty(favoriteLogicRef.validationError))
+    {
+        <MudAlert Severity="Severity.Error">@favoriteLogicRef.validationError</MudAlert>
+    }
+                    <MudButton OnClick="@(() => favoriteLogicRef.SaveFavoriteSpot(
+    swellAndTideComponent.FetchedData,
+    userName,
+    spotName,
+    description,
+    placeName))">
+                        Save as favorite Spot
+                    </MudButton>
+
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+@code {
+    private bool maja;
+    private string latitude;
+    private string longitude;
+    private string location;
+    public string userName;
+    private string spotName;
+    private string description = "";
+    public string placeName = "";
+    private bool showDeleteFields = false;
+
+    public SwellAndTideComponent swellAndTideComponent;
+    private SaveFavoriteLogic favoriteLogicRef;
+    private DeleteComponent deleteRef;
+    private LocationComponent locationRef;
+    List<Favourites> spotsList = new List<Favourites>();
+
+
+    private async Task SetCoordinatesHandler((string latitude, string longitude) coordinates)
+    {
+        latitude = coordinates.latitude;
+        longitude = coordinates.longitude;
+    }
+
+    private async Task GetSwellAndTideDate(string mama, string lale)
+    {
+    
+        await swellAndTideComponent.FetchData(mama, lale);
+    }
+
+    private void ShowDeleteFields()
+    {
+        showDeleteFields = true;
+    }
+
+
+    private async Task DisplayFavourites()
+    {
+        spotsList = dbContext.FavouriteSpot.ToList();
+    }
+
+
+    @code {
+        public string apiGeo = "712c9f44635b4ce78c378f0337e86443";
+        private string coordinates = "";
+        public async Task GetCoordinates(string placeName)
+        {
+            if (!string.IsNullOrEmpty(placeName))
+            {
+                var url = $"https://api.geoapify.com/v1/geocode/search?text={placeName}&apiKey={apiGeo}";
+
+                var response = await HttpClient.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<GeoCodeResponse>(content);
+
+                    if (result != null && result.features.Length > 0)
+                    {
+                        var latitude = result.features[0].properties.lat.ToString();
+                        var longitude = result.features[0].properties.lon.ToString();
+
+                        await GetSwellAndTideDate(latitude, longitude);
+
+
+                    }
+                    else
+                    {
+                        coordinates = "Location not found";
+                    }
+                }
+                else
+                {
+                    coordinates = "Failed to retrieve coordinates";
+                }
+            }
+        }
+
+
+        private class GeoCodeResponse
+        {
+            public GeoFeature[] features { get; set; }
+        }
+
+        private class GeoFeature
+        {
+            public GeoProperties properties { get; set; }
+        }
+
+        private class GeoProperties
+        {
+            public float lat { get; set; }
+            public float lon { get; set; }
+        }
+    }
+
+}

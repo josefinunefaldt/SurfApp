@@ -1,0 +1,45 @@
+﻿<h3 style="text-align:center">PREDEFINED SPOTS (COORDINATES)</h3>
+<MudContainer>
+   
+    
+    <MudButton Color="Color.Info" Class="m-1" OnClick="@(() => SetCoordinates("21.6720", "-158.0520"))">
+        Hawaii, North Shore
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="m-1" OnClick="@(() => SetCoordinates("-28.0167", "153.4000"))">
+         Gold Coast, Australia
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="m-1" OnClick="@(() => SetCoordinates("50.594", "-4.834"))">
+        Port Isaac, UK
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="m-1" OnClick="@(() => SetCoordinates("59.3293", "18.0686"))">
+       Torö, Sweden
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="m-1" OnClick="@(() => SetCoordinates("40.7128", "-74.0060"))">
+    Rockaway Beach, NY, USA
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="m-1" OnClick="@(() => SetCoordinates("-33.8679", "151.2073"))">
+  Sydney, Australia
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="mud-mb-2" OnClick="@(() => SetCoordinates("-33.9775", "18.5114"))">
+        <MudIcon Icon="Icons.LocationOn" Class="mud-mr-1" /> Cape Town, South Africa
+    </MudButton>
+
+    <MudButton Color="Color.Info" Class="mud-mb-2" OnClick="@(() => SetCoordinates("-37.8136", "144.9631"))">
+        <MudIcon Icon="Icons.LocationOn" Class="mud-mr-1" /> Bells Beach, Australia
+    </MudButton>
+</MudContainer>
+
+@code {
+    [Parameter] public EventCallback<(string latitude, string longitude)> OnCoordinatesSet { get; set; }
+
+    private async Task SetCoordinates(string latitude, string longitude)
+    {
+        await OnCoordinatesSet.InvokeAsync((latitude, longitude));
+    }
+}

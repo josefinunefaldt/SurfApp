@@ -1,0 +1,68 @@
+﻿@using System.Globalization
+@using BlazorApp5.Data.Entities
+@using BlazorApp5.Data
+@using MudBlazor
+@using static SwellAndTideComponent;
+
+@inject ApplicationDbContext dbContext
+
+@inject NavigationManager navigationManager;
+
+@inject HttpClient HttpClient
+@* <SwellAndTideComponent @ref="swellAndTideComponent" /> *@
+@* @code {
+    public string apiGeo = "712c9f44635b4ce78c378f0337e86443";
+    private string coordinates = "";
+    public SwellAndTideComponent swellAndTideComponent;
+    public async Task GetCoordinates(string placeName)
+    {
+        if (!string.IsNullOrEmpty(placeName))
+        {
+            var url = $"https://api.geoapify.com/v1/geocode/search?text={placeName}&apiKey={apiGeo}";
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<GeoCodeResponse>(content);
+
+                if (result != null && result.features.Length > 0)
+                {
+                    var latitude = result.features[0].properties.lat.ToString();
+                    var longitude = result.features[0].properties.lon.ToString();
+
+                    await swellAndTideComponent.FetchData(latitude, longitude);
+                
+
+                }
+                else
+                {
+                    coordinates = "Location not found";
+                }
+            }
+            else
+            {
+                coordinates = "Failed to retrieve coordinates";
+            }
+        }
+    }
+
+
+    private class GeoCodeResponse
+    {
+        public GeoFeature[] features { get; set; }
+    }
+
+    private class GeoFeature
+    {
+        public GeoProperties properties { get; set; }
+    }
+
+    private class GeoProperties
+    {
+        public float lat { get; set; }
+        public float lon { get; set; }
+    }
+}
+ *@

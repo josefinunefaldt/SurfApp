@@ -1,0 +1,24 @@
+﻿@using BlazorApp5.Data.Entities
+@using BlazorApp5.Data
+@using MudBlazor
+@using static SwellAndTideComponent;
+
+@inject ApplicationDbContext dbContext
+
+@inject NavigationManager navigationManager;
+
+@inject HttpClient HttpClient
+@inject ApplicationDbContext dbContext
+
+@code {
+    public async Task DeleteFavorite(string username, string spot)
+    {
+        var existingSpot = dbContext.FavouriteSpot.FirstOrDefault(s => s.Fav_username == username && s.Fav_user_spotname == spot);
+
+        if (existingSpot != null)
+        {
+            dbContext.FavouriteSpot.Remove(existingSpot);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+}
